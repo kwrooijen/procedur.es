@@ -1,4 +1,5 @@
 content/procedures.js
 elm-stuff
 elm.js
-site/gen/
+site/gen/json
+site/gen/js

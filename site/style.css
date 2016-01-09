@@ -49,22 +49,18 @@ h3 {
     line-height: 30.8px;
 }
 
-/* unvisited link */
 td a:link {
     color: #696969;
 }
 
-/* visited link */
 td a:visited {
     color: #696969;
 }
 
-/* mouse over link */
 td a:hover {
     color: #696969;
 }
 
-/* selected link */
 td a:active {
     color: #696969;
 }
