@@ -1,5 +1,6 @@
-module Main where
+module Main (..) where
 
+import Debug
 import Effects exposing (Never, Effects)
 import Html exposing (..)
 import Http
@@ -9,126 +10,176 @@ import Html.Attributes as Attr exposing (..)
 import Html.Events exposing (..)
 import String
 import StartApp
-import Regex exposing (regex, caseInsensitive)
+import Header exposing (..)
+import View exposing (..)
 
-header =
-  div [ id "header" ]
-        [ h1 [] <| [text "Procedur.es"]
-        ]
 
-listSpan model =
-    table [ id "package-list", style [("width", "100%")]] <|
-    tr [ class "label" ]
-       [ th [align "left"] [text "Procedure"]
-       , th [align "left"] [text "Section"]
-       ] ::
-    List.map (\proc ->
-        tr [ ]
-           [ td [] [ a [ href <| model.rootUrl ++ proc.procedureUrl
-                   , target "blank" ]
-                   [ text proc.procedure ]
-                   ]
-           , td [] [ a [ href <| model.rootUrl ++ proc.sectionUrl
-                   , target "blank" ]
-                   [ text proc.section ]
-                   ]
-          ]
-    ) model.procedureList
-
-view address model =
-    div []
-        [ header
-        , div [ id "content" ]
-              [ div [id "options"] []
-              , input
-                  [ id "procedure-input"
-                  , placeholder "Find Procedure"
-                  , Attr.value model.queryString
-                  , on "input" targetValue <| updateFilter address
-                  ] []
-              ,  listSpan model
-              ]
-        ]
-
+updateFilter : Signal.Address Action -> String -> Signal.Message
 updateFilter address v =
     (Signal.message address (UpdateQSList v))
 
-type Action
-  = None
-  | GetList (Maybe (List Procedure))
-  | UpdateQSList String
 
+update : Action -> Model -> ( Model, Effects Action )
 update action model =
-  case action of
-      GetList (Just list) ->
-          let sortedList = ignoreC <| List.sortBy model.sortBy list in
-          ({model | procedureList = sortedList, defaultList = sortedList}, Effects.none)
-      UpdateQSList qs ->
-        let strings = String.split " " qs
-            toFilter = if String.startsWith model.queryString qs
-                       then model.procedureList else model.defaultList
-            newProcedureList = toFilter |> List.filter (containsAll strings)
-        in ({model | queryString = qs, procedureList = newProcedureList}, Effects.none)
-      _ -> (model, Effects.none)
+    case action of
+        GetLanguages (Just (x :: xs)) ->
+            ( { model | languages = (x :: xs) }, getProcedures x )
 
-filterC = List.filter (\p -> String.contains "_" p.procedure)
-ignoreC = List.filter (\p -> not <| String.contains "_" p.procedure)
+        GetProcedures (Just procedures) ->
+            let
+                sortedProcedures = List.sortBy model.sortBy procedures
+            in
+                ( { model | procedures = sortedProcedures, defaultProcedures = sortedProcedures }, getSections model.language )
 
-containsAll strings item =
-  (List.all (\s ->
-      Regex.contains (s |> regex |> caseInsensitive) <| item.procedure ++ item.section)
-   strings)
+        GetSections (Just sections) ->
+            ( { model | sections = sections, defaultSections = sections }, getSections model.language )
 
-main = app.html
+        UpdateQSList qs ->
+            let
+                words = qs |> String.toLower |> String.words
 
+                toFilter =
+                    if String.startsWith model.queryString qs then
+                        model.procedures
+                    else
+                        model.defaultProcedures
+
+                newProcedureList = toFilter |> List.filter (containsAll words)
+            in
+                ( { model | queryString = qs, procedures = newProcedureList }, Effects.none )
+
+        _ ->
+            ( model, Effects.none )
+
+
+filterC : List Procedure -> List Procedure
+filterC =
+    List.filter (\p -> String.contains "_" p.name)
+
+
+ignoreC : List Procedure -> List Procedure
+ignoreC =
+    List.filter (\p -> not <| String.contains "_" p.name)
+
+
+containsAll : List String -> Procedure -> Bool
+containsAll words procedure =
+    let
+        hasTerm word =
+            String.contains word procedure.name || String.contains word procedure.section
+    in
+        List.all hasTerm words
+
+
+main : Signal Html
+main =
+    app.html
+
+
+app : StartApp.App Model
 app =
     StartApp.start
         { inputs = []
         , view = view
         , update = update
-        , init = init "guile"
+        , init = init
         }
+
+
+view : Signal.Address Action -> Model -> Html
+view address model =
+    div
+        []
+        [ View.header
+        , div
+            [ id "content" ]
+            [ div [ id "options" ] []
+            , input
+                [ id "procedure-input"
+                , placeholder "Find Procedure"
+                , Attr.value model.queryString
+                , on "input" targetValue <| updateFilter address
+                ]
+                []
+            , listSpan model
+            ]
+        ]
+
 
 port tasks : Signal (Task.Task Never ())
 port tasks =
-  app.tasks
+    app.tasks
 
-type alias Model =
-    { queryString : String
-    , procedureList : List Procedure
-    , defaultList : List Procedure
-    , sortBy : (Procedure -> String)
-    , rootUrl : String
-    }
 
-init : String -> (Model, Effects Action)
-init language =
-  ( Model "" [] [] .section "https://www.gnu.org/software/guile/manual/html_node/"
-  , getProcedures language
-  )
+init : ( Model, Effects Action )
+init =
+    ( { queryString = ""
+      , procedures = []
+      , sections = []
+      , defaultProcedures = []
+      , defaultSections = []
+      , sortBy = .section
+      , rootUrl = "https://www.gnu.org/software/guile/manual/html_node/"
+      , languages = []
+      , language = ""
+      }
+    , getLanguages
+    )
+
+
+getLanguages : Effects Action
+getLanguages =
+    Http.get decodeLanguages "gen/json/languages.json"
+        |> Task.toMaybe
+        |> Task.map GetLanguages
+        |> Effects.task
+
 
 getProcedures : String -> Effects Action
 getProcedures language =
-  Http.get decodeUrl (procedureUrl language)
-    |> Task.toMaybe
-    |> Task.map GetList
-    |> Effects.task
+    Http.get decodeProcedures (procedureUrl language)
+        |> Task.toMaybe
+        |> Task.map GetProcedures
+        |> Effects.task
+
+
+getSections : String -> Effects Action
+getSections language =
+    Http.get decodeSections (sectionUrl language)
+        |> Task.toMaybe
+        |> Task.map GetSections
+        |> Effects.task
+
 
 procedureUrl : String -> String
 procedureUrl language =
- "gen/json/" ++ language ++ "-procs.json"
+    "gen/json/" ++ language ++ "-procs.json"
 
-type alias Procedure =
-  { section : String
-  , procedure : String
-  , sectionUrl : String
-  , procedureUrl : String
-  }
 
-decodeUrl : Json.Decoder (List Procedure)
-decodeUrl =
-    Json.object4 Procedure
-        ("section"       := Json.string)
-        ("procedure"     := Json.string)
-        ("section-url"   := Json.string)
-        ("procedure-url" := Json.string) |> Json.list
+sectionUrl : String -> String
+sectionUrl language =
+    "gen/json/" ++ language ++ "-sections.json"
+
+
+decodeLanguages : Json.Decoder (List String)
+decodeLanguages =
+    Json.list Json.string
+
+
+decodeProcedures : Json.Decoder (List Procedure)
+decodeProcedures =
+    Json.object3
+        Procedure
+        ("section" := Json.string)
+        ("name" := Json.string)
+        ("url" := Json.string)
+        |> Json.list
+
+
+decodeSections : Json.Decoder (List Section)
+decodeSections =
+    Json.object2
+        Section
+        ("name" := Json.string)
+        ("url" := Json.string)
+        |> Json.list

@@ -9131,169 +9131,6 @@ Elm.Json.Decode.make = function (_elm) {
                                     ,value: value
                                     ,customDecoder: customDecoder};
 };
-Elm.Native.Regex = {};
-Elm.Native.Regex.make = function(localRuntime) {
-	localRuntime.Native = localRuntime.Native || {};
-	localRuntime.Native.Regex = localRuntime.Native.Regex || {};
-	if (localRuntime.Native.Regex.values)
-	{
-		return localRuntime.Native.Regex.values;
-	}
-	if ('values' in Elm.Native.Regex)
-	{
-		return localRuntime.Native.Regex.values = Elm.Native.Regex.values;
-	}
-
-	var List = Elm.Native.List.make(localRuntime);
-	var Maybe = Elm.Maybe.make(localRuntime);
-
-	function escape(str)
-	{
-		return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-	}
-	function caseInsensitive(re)
-	{
-		return new RegExp(re.source, 'gi');
-	}
-	function regex(raw)
-	{
-		return new RegExp(raw, 'g');
-	}
-
-	function contains(re, string)
-	{
-		return string.match(re) !== null;
-	}
-
-	function find(n, re, str)
-	{
-		n = n.ctor === 'All' ? Infinity : n._0;
-		var out = [];
-		var number = 0;
-		var string = str;
-		var lastIndex = re.lastIndex;
-		var prevLastIndex = -1;
-		var result;
-		while (number++ < n && (result = re.exec(string)))
-		{
-			if (prevLastIndex === re.lastIndex) break;
-			var i = result.length - 1;
-			var subs = new Array(i);
-			while (i > 0)
-			{
-				var submatch = result[i];
-				subs[--i] = submatch === undefined
-					? Maybe.Nothing
-					: Maybe.Just(submatch);
-			}
-			out.push({
-				match: result[0],
-				submatches: List.fromArray(subs),
-				index: result.index,
-				number: number
-			});
-			prevLastIndex = re.lastIndex;
-		}
-		re.lastIndex = lastIndex;
-		return List.fromArray(out);
-	}
-
-	function replace(n, re, replacer, string)
-	{
-		n = n.ctor === 'All' ? Infinity : n._0;
-		var count = 0;
-		function jsReplacer(match)
-		{
-			if (count++ >= n)
-			{
-				return match;
-			}
-			var i = arguments.length - 3;
-			var submatches = new Array(i);
-			while (i > 0)
-			{
-				var submatch = arguments[i];
-				submatches[--i] = submatch === undefined
-					? Maybe.Nothing
-					: Maybe.Just(submatch);
-			}
-			return replacer({
-				match: match,
-				submatches: List.fromArray(submatches),
-				index: arguments[i - 1],
-				number: count
-			});
-		}
-		return string.replace(re, jsReplacer);
-	}
-
-	function split(n, re, str)
-	{
-		n = n.ctor === 'All' ? Infinity : n._0;
-		if (n === Infinity)
-		{
-			return List.fromArray(str.split(re));
-		}
-		var string = str;
-		var result;
-		var out = [];
-		var start = re.lastIndex;
-		while (n--)
-		{
-			if (!(result = re.exec(string))) break;
-			out.push(string.slice(start, result.index));
-			start = re.lastIndex;
-		}
-		out.push(string.slice(start));
-		return List.fromArray(out);
-	}
-
-	return Elm.Native.Regex.values = {
-		regex: regex,
-		caseInsensitive: caseInsensitive,
-		escape: escape,
-
-		contains: F2(contains),
-		find: F3(find),
-		replace: F4(replace),
-		split: F3(split)
-	};
-};
-
-Elm.Regex = Elm.Regex || {};
-Elm.Regex.make = function (_elm) {
-   "use strict";
-   _elm.Regex = _elm.Regex || {};
-   if (_elm.Regex.values) return _elm.Regex.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Native$Regex = Elm.Native.Regex.make(_elm);
-   var _op = {};
-   var split = $Native$Regex.split;
-   var replace = $Native$Regex.replace;
-   var find = $Native$Regex.find;
-   var AtMost = function (a) {    return {ctor: "AtMost",_0: a};};
-   var All = {ctor: "All"};
-   var Match = F4(function (a,b,c,d) {
-      return {match: a,submatches: b,index: c,number: d};
-   });
-   var contains = $Native$Regex.contains;
-   var caseInsensitive = $Native$Regex.caseInsensitive;
-   var regex = $Native$Regex.regex;
-   var escape = $Native$Regex.escape;
-   var Regex = {ctor: "Regex"};
-   return _elm.Regex.values = {_op: _op
-                              ,regex: regex
-                              ,escape: escape
-                              ,caseInsensitive: caseInsensitive
-                              ,contains: contains
-                              ,find: find
-                              ,replace: replace
-                              ,split: split
-                              ,Match: Match
-                              ,All: All
-                              ,AtMost: AtMost};
-};
 Elm.Native.Effects = {};
 Elm.Native.Effects.make = function(localRuntime) {
 
@@ -12347,6 +12184,123 @@ Elm.StartApp.make = function (_elm) {
                                  ,Config: Config
                                  ,App: App};
 };
+Elm.Header = Elm.Header || {};
+Elm.Header.make = function (_elm) {
+   "use strict";
+   _elm.Header = _elm.Header || {};
+   if (_elm.Header.values) return _elm.Header.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var Procedure = F3(function (a,b,c) {
+      return {section: a,name: b,url: c};
+   });
+   var Section = F2(function (a,b) {    return {name: a,url: b};});
+   var Model = F9(function (a,b,c,d,e,f,g,h,i) {
+      return {queryString: a
+             ,procedures: b
+             ,sections: c
+             ,defaultProcedures: d
+             ,defaultSections: e
+             ,sortBy: f
+             ,rootUrl: g
+             ,languages: h
+             ,language: i};
+   });
+   var UpdateQSList = function (a) {
+      return {ctor: "UpdateQSList",_0: a};
+   };
+   var GetLanguages = function (a) {
+      return {ctor: "GetLanguages",_0: a};
+   };
+   var GetSections = function (a) {
+      return {ctor: "GetSections",_0: a};
+   };
+   var GetProcedures = function (a) {
+      return {ctor: "GetProcedures",_0: a};
+   };
+   var None = {ctor: "None"};
+   return _elm.Header.values = {_op: _op
+                               ,None: None
+                               ,GetProcedures: GetProcedures
+                               ,GetSections: GetSections
+                               ,GetLanguages: GetLanguages
+                               ,UpdateQSList: UpdateQSList
+                               ,Model: Model
+                               ,Section: Section
+                               ,Procedure: Procedure};
+};
+Elm.View = Elm.View || {};
+Elm.View.make = function (_elm) {
+   "use strict";
+   _elm.View = _elm.View || {};
+   if (_elm.View.values) return _elm.View.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Header = Elm.Header.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var procTD = F3(function (model,url,proc) {
+      return A2($Html.td,
+      _U.list([]),
+      _U.list([A2($Html.a,
+      _U.list([$Html$Attributes.href(A2($Basics._op["++"],
+              model.rootUrl,
+              url))
+              ,$Html$Attributes.target("blank")]),
+      _U.list([$Html.text(proc)]))]));
+   });
+   var procTRs = F2(function (model,proc) {
+      return A2($Html.tr,
+      _U.list([]),
+      _U.list([A3(procTD,model,proc.url,proc.name)
+              ,A3(procTD,model,proc.url,proc.section)]));
+   });
+   var tableHeader = A2($Html.tr,
+   _U.list([$Html$Attributes.$class("label")]),
+   _U.list([A2($Html.th,
+           _U.list([$Html$Attributes.align("left")]),
+           _U.list([$Html.text("Procedure")]))
+           ,A2($Html.th,
+           _U.list([$Html$Attributes.align("left")]),
+           _U.list([$Html.text("Section")]))]));
+   var tableflip = function (a) {
+      return A2($Html.table,
+      _U.list([$Html$Attributes.id("package-list")
+              ,$Html$Attributes.style(_U.list([{ctor: "_Tuple2"
+                                               ,_0: "width"
+                                               ,_1: "100%"}]))]),
+      A2($List._op["::"],tableHeader,a));
+   };
+   var listSpan = function (model) {
+      return tableflip(A2($List.map,
+      procTRs(model),
+      model.procedures));
+   };
+   var header = A2($Html.div,
+   _U.list([$Html$Attributes.id("header")]),
+   _U.list([A2($Html.h1,
+   _U.list([]),
+   _U.list([$Html.text("Procedur.es")]))]));
+   return _elm.View.values = {_op: _op
+                             ,header: header
+                             ,tableHeader: tableHeader
+                             ,procTD: procTD
+                             ,tableflip: tableflip
+                             ,procTRs: procTRs
+                             ,listSpan: listSpan};
+};
 Elm.Main = Elm.Main || {};
 Elm.Main.make = function (_elm) {
    "use strict";
@@ -12356,6 +12310,7 @@ Elm.Main.make = function (_elm) {
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Effects = Elm.Effects.make(_elm),
+   $Header = Elm.Header.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $Html$Events = Elm.Html.Events.make(_elm),
@@ -12363,159 +12318,136 @@ Elm.Main.make = function (_elm) {
    $Json$Decode = Elm.Json.Decode.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
-   $Regex = Elm.Regex.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $StartApp = Elm.StartApp.make(_elm),
    $String = Elm.String.make(_elm),
-   $Task = Elm.Task.make(_elm);
+   $Task = Elm.Task.make(_elm),
+   $View = Elm.View.make(_elm);
    var _op = {};
-   var Procedure = F4(function (a,b,c,d) {
-      return {section: a
-             ,procedure: b
-             ,sectionUrl: c
-             ,procedureUrl: d};
-   });
-   var decodeUrl = $Json$Decode.list(A5($Json$Decode.object4,
-   Procedure,
+   var decodeSections = $Json$Decode.list(A3($Json$Decode.object2,
+   $Header.Section,
+   A2($Json$Decode._op[":="],"name",$Json$Decode.string),
+   A2($Json$Decode._op[":="],"url",$Json$Decode.string)));
+   var decodeProcedures = $Json$Decode.list(A4($Json$Decode.object3,
+   $Header.Procedure,
    A2($Json$Decode._op[":="],"section",$Json$Decode.string),
-   A2($Json$Decode._op[":="],"procedure",$Json$Decode.string),
-   A2($Json$Decode._op[":="],"section-url",$Json$Decode.string),
-   A2($Json$Decode._op[":="],
-   "procedure-url",
-   $Json$Decode.string)));
+   A2($Json$Decode._op[":="],"name",$Json$Decode.string),
+   A2($Json$Decode._op[":="],"url",$Json$Decode.string)));
+   var decodeLanguages = $Json$Decode.list($Json$Decode.string);
+   var sectionUrl = function (language) {
+      return A2($Basics._op["++"],
+      "gen/json/",
+      A2($Basics._op["++"],language,"-sections.json"));
+   };
    var procedureUrl = function (language) {
       return A2($Basics._op["++"],
       "gen/json/",
       A2($Basics._op["++"],language,"-procs.json"));
    };
-   var Model = F5(function (a,b,c,d,e) {
-      return {queryString: a
-             ,procedureList: b
-             ,defaultList: c
-             ,sortBy: d
-             ,rootUrl: e};
-   });
-   var containsAll = F2(function (strings,item) {
-      return A2($List.all,
-      function (s) {
-         return A2($Regex.contains,
-         $Regex.caseInsensitive($Regex.regex(s)),
-         A2($Basics._op["++"],item.procedure,item.section));
-      },
-      strings);
-   });
-   var ignoreC = $List.filter(function (p) {
-      return $Basics.not(A2($String.contains,"_",p.procedure));
-   });
-   var filterC = $List.filter(function (p) {
-      return A2($String.contains,"_",p.procedure);
-   });
-   var update = F2(function (action,model) {
-      var _p0 = action;
-      _v0_2: do {
-         switch (_p0.ctor)
-         {case "GetList": if (_p0._0.ctor === "Just") {
-                    var sortedList = ignoreC(A2($List.sortBy,
-                    model.sortBy,
-                    _p0._0._0));
-                    return {ctor: "_Tuple2"
-                           ,_0: _U.update(model,
-                           {procedureList: sortedList,defaultList: sortedList})
-                           ,_1: $Effects.none};
-                 } else {
-                    break _v0_2;
-                 }
-            case "UpdateQSList": var _p1 = _p0._0;
-              var toFilter = A2($String.startsWith,
-              model.queryString,
-              _p1) ? model.procedureList : model.defaultList;
-              var strings = A2($String.split," ",_p1);
-              var newProcedureList = A2($List.filter,
-              containsAll(strings),
-              toFilter);
-              return {ctor: "_Tuple2"
-                     ,_0: _U.update(model,
-                     {queryString: _p1,procedureList: newProcedureList})
-                     ,_1: $Effects.none};
-            default: break _v0_2;}
-      } while (false);
-      return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-   });
-   var UpdateQSList = function (a) {
-      return {ctor: "UpdateQSList",_0: a};
-   };
-   var GetList = function (a) {
-      return {ctor: "GetList",_0: a};
+   var getSections = function (language) {
+      return $Effects.task(A2($Task.map,
+      $Header.GetSections,
+      $Task.toMaybe(A2($Http.get,
+      decodeSections,
+      sectionUrl(language)))));
    };
    var getProcedures = function (language) {
       return $Effects.task(A2($Task.map,
-      GetList,
-      $Task.toMaybe(A2($Http.get,decodeUrl,procedureUrl(language)))));
+      $Header.GetProcedures,
+      $Task.toMaybe(A2($Http.get,
+      decodeProcedures,
+      procedureUrl(language)))));
    };
-   var init = function (language) {
-      return {ctor: "_Tuple2"
-             ,_0: A5(Model,
-             "",
-             _U.list([]),
-             _U.list([]),
-             function (_) {
-                return _.section;
-             },
-             "https://www.gnu.org/software/guile/manual/html_node/")
-             ,_1: getProcedures(language)};
-   };
-   var None = {ctor: "None"};
-   var updateFilter = F2(function (address,v) {
-      return A2($Signal.message,address,UpdateQSList(v));
+   var getLanguages = $Effects.task(A2($Task.map,
+   $Header.GetLanguages,
+   $Task.toMaybe(A2($Http.get,
+   decodeLanguages,
+   "gen/json/languages.json"))));
+   var init = {ctor: "_Tuple2"
+              ,_0: {queryString: ""
+                   ,procedures: _U.list([])
+                   ,sections: _U.list([])
+                   ,defaultProcedures: _U.list([])
+                   ,defaultSections: _U.list([])
+                   ,sortBy: function (_) {
+                      return _.section;
+                   }
+                   ,rootUrl: "https://www.gnu.org/software/guile/manual/html_node/"
+                   ,languages: _U.list([])
+                   ,language: ""}
+              ,_1: getLanguages};
+   var containsAll = F2(function (words,procedure) {
+      var hasTerm = function (word) {
+         return A2($String.contains,
+         word,
+         procedure.name) || A2($String.contains,word,procedure.section);
+      };
+      return A2($List.all,hasTerm,words);
    });
-   var listSpan = function (model) {
-      return A2($Html.table,
-      _U.list([$Html$Attributes.id("package-list")
-              ,$Html$Attributes.style(_U.list([{ctor: "_Tuple2"
-                                               ,_0: "width"
-                                               ,_1: "100%"}]))]),
-      A2($List._op["::"],
-      A2($Html.tr,
-      _U.list([$Html$Attributes.$class("label")]),
-      _U.list([A2($Html.th,
-              _U.list([$Html$Attributes.align("left")]),
-              _U.list([$Html.text("Procedure")]))
-              ,A2($Html.th,
-              _U.list([$Html$Attributes.align("left")]),
-              _U.list([$Html.text("Section")]))])),
-      A2($List.map,
-      function (proc) {
-         return A2($Html.tr,
-         _U.list([]),
-         _U.list([A2($Html.td,
-                 _U.list([]),
-                 _U.list([A2($Html.a,
-                 _U.list([$Html$Attributes.href(A2($Basics._op["++"],
-                         model.rootUrl,
-                         proc.procedureUrl))
-                         ,$Html$Attributes.target("blank")]),
-                 _U.list([$Html.text(proc.procedure)]))]))
-                 ,A2($Html.td,
-                 _U.list([]),
-                 _U.list([A2($Html.a,
-                 _U.list([$Html$Attributes.href(A2($Basics._op["++"],
-                         model.rootUrl,
-                         proc.sectionUrl))
-                         ,$Html$Attributes.target("blank")]),
-                 _U.list([$Html.text(proc.section)]))]))]));
-      },
-      model.procedureList)));
-   };
-   var header = A2($Html.div,
-   _U.list([$Html$Attributes.id("header")]),
-   _U.list([A2($Html.h1,
-   _U.list([]),
-   _U.list([$Html.text("Procedur.es")]))]));
+   var ignoreC = $List.filter(function (p) {
+      return $Basics.not(A2($String.contains,"_",p.name));
+   });
+   var filterC = $List.filter(function (p) {
+      return A2($String.contains,"_",p.name);
+   });
+   var update = F2(function (action,model) {
+      var _p0 = action;
+      _v0_4: do {
+         switch (_p0.ctor)
+         {case "GetLanguages":
+            if (_p0._0.ctor === "Just" && _p0._0._0.ctor === "::") {
+                    var _p1 = _p0._0._0._0;
+                    return {ctor: "_Tuple2"
+                           ,_0: _U.update(model,
+                           {languages: A2($List._op["::"],_p1,_p0._0._0._1)})
+                           ,_1: getProcedures(_p1)};
+                 } else {
+                    break _v0_4;
+                 }
+            case "GetProcedures": if (_p0._0.ctor === "Just") {
+                    var sortedProcedures = A2($List.sortBy,
+                    model.sortBy,
+                    _p0._0._0);
+                    return {ctor: "_Tuple2"
+                           ,_0: _U.update(model,
+                           {procedures: sortedProcedures
+                           ,defaultProcedures: sortedProcedures})
+                           ,_1: getSections(model.language)};
+                 } else {
+                    break _v0_4;
+                 }
+            case "GetSections": if (_p0._0.ctor === "Just") {
+                    var _p2 = _p0._0._0;
+                    return {ctor: "_Tuple2"
+                           ,_0: _U.update(model,{sections: _p2,defaultSections: _p2})
+                           ,_1: getSections(model.language)};
+                 } else {
+                    break _v0_4;
+                 }
+            case "UpdateQSList": var _p3 = _p0._0;
+              var toFilter = A2($String.startsWith,
+              model.queryString,
+              _p3) ? model.procedures : model.defaultProcedures;
+              var words = $String.words($String.toLower(_p3));
+              var newProcedureList = A2($List.filter,
+              containsAll(words),
+              toFilter);
+              return {ctor: "_Tuple2"
+                     ,_0: _U.update(model,
+                     {queryString: _p3,procedures: newProcedureList})
+                     ,_1: $Effects.none};
+            default: break _v0_4;}
+      } while (false);
+      return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+   });
+   var updateFilter = F2(function (address,v) {
+      return A2($Signal.message,address,$Header.UpdateQSList(v));
+   });
    var view = F2(function (address,model) {
       return A2($Html.div,
       _U.list([]),
-      _U.list([header
+      _U.list([$View.header
               ,A2($Html.div,
               _U.list([$Html$Attributes.id("content")]),
               _U.list([A2($Html.div,
@@ -12530,33 +12462,31 @@ Elm.Main.make = function (_elm) {
                               $Html$Events.targetValue,
                               updateFilter(address))]),
                       _U.list([]))
-                      ,listSpan(model)]))]));
+                      ,$View.listSpan(model)]))]));
    });
    var app = $StartApp.start({inputs: _U.list([])
                              ,view: view
                              ,update: update
-                             ,init: init("guile")});
+                             ,init: init});
    var main = app.html;
    var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",
    app.tasks);
    return _elm.Main.values = {_op: _op
-                             ,header: header
-                             ,listSpan: listSpan
-                             ,view: view
                              ,updateFilter: updateFilter
-                             ,None: None
-                             ,GetList: GetList
-                             ,UpdateQSList: UpdateQSList
                              ,update: update
                              ,filterC: filterC
                              ,ignoreC: ignoreC
                              ,containsAll: containsAll
                              ,main: main
                              ,app: app
-                             ,Model: Model
+                             ,view: view
                              ,init: init
+                             ,getLanguages: getLanguages
                              ,getProcedures: getProcedures
+                             ,getSections: getSections
                              ,procedureUrl: procedureUrl
-                             ,Procedure: Procedure
-                             ,decodeUrl: decodeUrl};
+                             ,sectionUrl: sectionUrl
+                             ,decodeLanguages: decodeLanguages
+                             ,decodeProcedures: decodeProcedures
+                             ,decodeSections: decodeSections};
 };

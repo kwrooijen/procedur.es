@@ -1,0 +1,8 @@
+#!/bin/bash
+CONFIG_LANG_PATH="config/languages"
+GEN_JSON_PATH="site/gen/json"
+
+for language in $(ls $CONFIG_LANG_PATH); do
+    csvjson ${CONFIG_LANG_PATH}/${language}/procs.csv > ${GEN_JSON_PATH}/${language}-procs.json
+    csvjson ${CONFIG_LANG_PATH}/${language}/sections.csv > ${GEN_JSON_PATH}/${language}-sections.json
+done
