@@ -38,9 +38,7 @@ app =
 init : ( Model, Effects Action )
 init =
     ( { queryString = ""
-      , procedures = []
       , sections = []
-      , defaultProcedures = []
       , defaultSections = []
       , sortBy = .section
       , rootUrl = "https://www.gnu.org/software/guile/manual/html_node/"
@@ -49,11 +47,6 @@ init =
       }
     , getLanguages
     )
-
-
-updateFilter : Signal.Address Action -> String -> Signal.Message
-updateFilter address v =
-    Signal.message address (UpdateQSList v)
 
 
 view : Signal.Address Action -> Model -> Html
@@ -68,7 +61,7 @@ view address model =
                 [ id "procedure-input"
                 , placeholder "Find Procedure"
                 , Attr.value model.queryString
-                , on "input" targetValue <| updateFilter address
+                , on "input" targetValue <| Updater.updateFilter address
                 ]
                 []
             , listSpan model

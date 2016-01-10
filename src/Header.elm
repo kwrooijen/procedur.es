@@ -1,35 +1,47 @@
 module Header (..) where
-
+import Html exposing (..)
 
 type Action
     = None
-    | GetProcedures (Maybe (List Procedure))
-    | GetSections (Maybe (List Section))
+    | GetProcedures (Maybe (List ProcedureJson))
+    | GetSections (Maybe (List SectionJson))
     | GetLanguages (Maybe (List String))
     | UpdateQSList String
 
 
 type alias Model =
     { queryString : String
-    , procedures : List Procedure
     , sections : List Section
-    , defaultProcedures : List Procedure
     , defaultSections : List Section
-    , sortBy : Procedure -> String
+    , sortBy : ProcedureJson -> String
     , rootUrl : String
     , languages : List String
     , language : String
     }
 
 
-type alias Section =
+type alias SectionJson =
     { name : String
     , url : String
     }
 
 
+type alias Section =
+    { name : String
+    , url : String
+    , procedures : List Procedure
+    }
+
+
+type alias ProcedureJson =
+    { section : String
+    , name : String
+    , url : String
+    }
+
 type alias Procedure =
     { section : String
     , name : String
     , url : String
+    , html : Html
     }

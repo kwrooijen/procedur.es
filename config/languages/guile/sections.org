@@ -1,4 +1,4 @@
-| section                                | section-url                                                                          |
+| name                                   | url                                                                                  |
 |----------------------------------------+--------------------------------------------------------------------------------------|
 | Accessing Arrays from C                | Accessing-Arrays-from-C.html#Accessing-Arrays-from-C                                 |
 | Accessing Cell Entries                 | Accessing-Cell-Entries.html#Accessing-Cell-Entries                                   |

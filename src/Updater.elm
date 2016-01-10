@@ -11,31 +11,71 @@ import Html.Events exposing (..)
 import String
 import StartApp
 import Header exposing (..)
+import Focus exposing ((=>))
+
+
+procTD : Model -> ProcedureJson -> Html
+procTD model proc =
+    tr
+        []
+        [ td
+            []
+            [ a
+                [ href <| model.rootUrl ++ proc.url
+                , target "blank"
+                ]
+                [ text proc.name ]
+            ]
+        ]
+
+
+makeSections =
+    List.map (\{ name, url } -> { name = name, url = url, procedures = [] })
 
 
 uGetLanguages model x xs =
-    ( { model | languages = (x :: xs) }, getProcedures x )
+    ( { model | languages = (x :: xs), language = x }, getSections x )
+
+
+uGetSections model sections =
+    let
+        s = makeSections sections
+    in
+        ( { model
+            | sections = s
+            , defaultSections = s
+          }
+        , getProcedures model.language
+        )
+
+
+addProcs model procs section =
+    let
+        sectionProcs = List.filter (\proc -> proc.section == section.name) procs
+
+        procz =
+            List.map
+                (\p ->
+                    { html = (procTD model p)
+                    , section = p.section
+                    , name = p.name
+                    , url = p.url
+                    }
+                )
+                sectionProcs
+    in
+        { section | procedures = procz }
 
 
 uGetProcedures model procedures =
     let
         sortedProcedures = List.sortBy model.sortBy procedures
+
+        ok = List.map (addProcs model sortedProcedures) model.sections
     in
-        ( { model
-            | procedures = sortedProcedures
-            , defaultProcedures = sortedProcedures
-          }
-        , getSections model.language
+        ( { model | sections = ok, defaultSections = ok }
+        , Effects.none
         )
-
-
-uGetSections model sections =
-    ( { model
-        | sections = sections
-        , defaultSections = sections
-      }
-    , getSections model.language
-    )
 
 
 uUpdateQSList model qs =
@@ -43,14 +83,26 @@ uUpdateQSList model qs =
         words = qs |> String.toLower |> String.words
 
         toFilter =
-            if String.startsWith model.queryString qs then
-                model.procedures
+            if qs == "" then
+                model.defaultSections
+            else if String.startsWith model.queryString qs then
+                model.sections
             else
-                model.defaultProcedures
+                model.defaultSections
 
-        newProcedureList = toFilter |> List.filter (containsAll words)
+        ( allSections, _ ) = List.foldr foldso ( [], words ) toFilter
     in
-        ( { model | queryString = qs, procedures = newProcedureList }, Effects.none )
+        ( { model | queryString = qs, sections = allSections }, Effects.none )
+
+
+foldso section ( acc, words ) =
+    if sectionContains words section then
+        ( section :: acc, words )
+    else
+        let
+            newProcedures = List.filter (containsAll words) section.procedures
+        in
+            ( { section | procedures = newProcedures } :: acc, words )
 
 
 update : Action -> Model -> ( Model, Effects Action )
@@ -66,10 +118,18 @@ update action model =
             uGetSections model sections
 
         UpdateQSList qs ->
-            uUpdateQSList model qs
+            case ( String.length qs < 2, (String.endsWith " " qs) && (String.length qs > String.length model.queryString) ) of
+                ( _, True ) ->
+                    ( { model | queryString = qs }, Effects.none )
+
+                ( True, _ ) ->
+                    ( { model | queryString = qs, sections = model.defaultSections }, Effects.none )
+
+                _ ->
+                    uUpdateQSList model qs
 
         _ ->
-            ( model, Effects.none )
+            Debug.log "Something went wrong.." ( model, Effects.none )
 
 
 getLanguages : Effects Action
@@ -111,23 +171,34 @@ decodeLanguages =
     Json.list Json.string
 
 
-decodeProcedures : Json.Decoder (List Procedure)
+decodeProcedures : Json.Decoder (List ProcedureJson)
 decodeProcedures =
     Json.object3
-        Procedure
+        ProcedureJson
         ("section" := Json.string)
         ("name" := Json.string)
         ("url" := Json.string)
         |> Json.list
 
 
-decodeSections : Json.Decoder (List Section)
+decodeSections : Json.Decoder (List SectionJson)
 decodeSections =
     Json.object2
-        Section
+        SectionJson
         ("name" := Json.string)
         ("url" := Json.string)
         |> Json.list
+
+
+sectionContains : List String -> Section -> Bool
+sectionContains words section =
+    let
+        name = String.toLower section.name
+
+        hasTerm word =
+            String.contains word name
+    in
+        List.all hasTerm words
 
 
 containsAll : List String -> Procedure -> Bool
@@ -137,6 +208,11 @@ containsAll words procedure =
             String.contains word procedure.name || String.contains word procedure.section
     in
         List.all hasTerm words
+
+
+updateFilter : Signal.Address Action -> String -> Signal.Message
+updateFilter address v =
+    Signal.message address (UpdateQSList v)
 
 
 filterC : List Procedure -> List Procedure

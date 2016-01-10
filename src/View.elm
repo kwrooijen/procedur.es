@@ -1,5 +1,6 @@
 module View (..) where
 
+import Debug exposing (..)
 import Html exposing (..)
 import Html.Attributes as Attr exposing (..)
 import Header exposing (..)
@@ -10,15 +11,6 @@ header =
     div
         [ id "header" ]
         [ h1 [] [ text "Procedur.es" ]
-        ]
-
-
-tableHeader : Html
-tableHeader =
-    tr
-        [ class "label" ]
-        [ th [ align "left" ] [ text "Procedure" ]
-        , th [ align "left" ] [ text "Section" ]
         ]
 
 
@@ -38,19 +30,43 @@ tableflip : List Html -> Html
 tableflip a =
     table
         [ id "package-list", style [ ( "width", "100%" ) ] ]
-        <| tableHeader
-        :: a
+        a
 
 
-procTRs : Model -> Procedure -> Html
-procTRs model proc =
-    tr
-        []
-        [ procTD model proc.url proc.name
-        , procTD model proc.url proc.section
-        ]
+-- procTRs : Model -> Section -> List Html
+-- procTRs model section =
+--     case section.procedures of
+--         [] ->
+--           []
+
+--         procedures ->
+--             (tr [] [ th [ align "left" ] [ text section.name ] ])
+--                 :: (List.map
+--                         (\proc ->
+--                             tr
+--                                 []
+--                                 [ procTD model proc.url proc.name
+--                                 ]
+--                         )
+--                         procedures
+--                    )
+
+
+procTRs : Model -> Section -> List Html
+procTRs model section =
+    case section.procedures of
+        [] ->
+          []
+
+        procedures ->
+            (tr [] [ th [ align "left" ] [ text section.name ] ])
+                :: List.map .html procedures
+
+getProcHtml section =
+  List.map .html (section.procedures)
+
 
 
 listSpan : Model -> Html
 listSpan model =
-    tableflip <| List.map (procTRs model) model.procedures
+    tableflip <| List.take 500 <| List.concat <| List.map (procTRs model) model.sections
