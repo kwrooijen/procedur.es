@@ -56,7 +56,8 @@ view address model =
         [ View.header
         , div
             [ id "content" ]
-            [ input
+            [ languageLabel model
+            , input
                 [ id "procedure-input"
                 , placeholder "Find Procedure"
                 , Attr.value model.queryString

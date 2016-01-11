@@ -13,6 +13,11 @@ header =
         ]
 
 
+languageLabel : Model -> Html
+languageLabel model =
+    div [ id "language" ] [ text model.language ]
+
+
 procTD : Model -> String -> String -> Html
 procTD model url proc =
     td
