@@ -55,7 +55,7 @@ sectionHeader model section =
 
 sectionSeparator : List Html
 sectionSeparator =
-    [ div [ class "section-separator" ] [] ]
+    [ tr [] [ div [ class "section-separator" ] [] ] ]
 
 
 tableRows : Model -> Section -> List Html
