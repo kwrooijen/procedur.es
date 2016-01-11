@@ -7,11 +7,8 @@ import Http
 import Json.Decode as Json exposing ((:=))
 import Task
 import Html.Attributes as Attr exposing (..)
-import Html.Events exposing (..)
 import String
-import StartApp
 import Header exposing (..)
-import Focus exposing ((=>))
 
 
 procTD : Model -> ProcedureJson -> Html
@@ -25,18 +22,22 @@ procTD model proc =
                 , target "blank"
                 ]
                 [ text proc.name ]
+            , div [ class "proc-description" ] [ text proc.description ]
             ]
         ]
 
 
+makeSections : List SectionJson -> List Section
 makeSections =
     List.map (\{ name, url } -> { name = name, url = url, procedures = [] })
 
 
+uGetLanguages : Model -> String -> List String -> (Model, Effects Action)
 uGetLanguages model x xs =
     ( { model | languages = (x :: xs), language = x }, getSections x )
 
 
+uGetSections : Model -> List SectionJson -> (Model, Effects Action)
 uGetSections model sections =
     let
         s = makeSections sections
@@ -49,9 +50,10 @@ uGetSections model sections =
         )
 
 
-addProcs model procs section =
+addProcs : Model -> List ProcedureJson -> Section -> Section
+addProcs model jsonProcs section =
     let
-        sectionProcs = List.filter (\proc -> proc.section == section.name) procs
+        sectionProcs = List.filter (\proc -> proc.section == section.name) jsonProcs
 
         procz =
             List.map
@@ -60,24 +62,25 @@ addProcs model procs section =
                     , section = p.section
                     , name = p.name
                     , url = p.url
+                    , description = p.description
                     }
                 )
                 sectionProcs
     in
         { section | procedures = procz }
 
-
+uGetProcedures : Model -> List ProcedureJson -> (Model, Effects Action)
 uGetProcedures model procedures =
     let
         sortedProcedures = List.sortBy model.sortBy procedures
 
-        ok = List.map (addProcs model sortedProcedures) model.sections
+        allSections = List.map (addProcs model sortedProcedures) model.sections
     in
-        ( { model | sections = ok, defaultSections = ok }
+        ( { model | sections = allSections, defaultSections = allSections }
         , Effects.none
         )
 
-
+uUpdateQSList : Model -> String -> (Model, Effects Action)
 uUpdateQSList model qs =
     let
         words = qs |> String.toLower |> String.words
@@ -95,6 +98,7 @@ uUpdateQSList model qs =
         ( { model | queryString = qs, sections = allSections }, Effects.none )
 
 
+foldso : Section -> (List Section, List String) -> (List Section, List String)
 foldso section ( acc, words ) =
     if sectionContains words section then
         ( section :: acc, words )
@@ -118,12 +122,9 @@ update action model =
             uGetSections model sections
 
         UpdateQSList qs ->
-            case ( String.length qs < 2, (String.endsWith " " qs) && (String.length qs > String.length model.queryString) ) of
-                ( _, True ) ->
+            case (String.endsWith " " qs) && (String.length qs > String.length model.queryString) of
+                True ->
                     ( { model | queryString = qs }, Effects.none )
-
-                ( True, _ ) ->
-                    ( { model | queryString = qs, sections = model.defaultSections }, Effects.none )
 
                 _ ->
                     uUpdateQSList model qs
@@ -173,11 +174,12 @@ decodeLanguages =
 
 decodeProcedures : Json.Decoder (List ProcedureJson)
 decodeProcedures =
-    Json.object3
+    Json.object4
         ProcedureJson
         ("section" := Json.string)
         ("name" := Json.string)
         ("url" := Json.string)
+        ("description" := Json.string)
         |> Json.list
 
 

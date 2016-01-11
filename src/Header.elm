@@ -1,5 +1,7 @@
 module Header (..) where
+
 import Html exposing (..)
+
 
 type Action
     = None
@@ -20,12 +22,6 @@ type alias Model =
     }
 
 
-type alias SectionJson =
-    { name : String
-    , url : String
-    }
-
-
 type alias Section =
     { name : String
     , url : String
@@ -33,15 +29,24 @@ type alias Section =
     }
 
 
-type alias ProcedureJson =
-    { section : String
-    , name : String
-    , url : String
-    }
-
 type alias Procedure =
     { section : String
     , name : String
     , url : String
     , html : Html
+    , description : String
+    }
+
+
+type alias SectionJson =
+    { name : String
+    , url : String
+    }
+
+
+type alias ProcedureJson =
+    { section : String
+    , name : String
+    , url : String
+    , description : String
     }

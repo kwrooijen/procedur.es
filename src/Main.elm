@@ -56,8 +56,7 @@ view address model =
         [ View.header
         , div
             [ id "content" ]
-            [ div [ id "options" ] []
-            , input
+            [ input
                 [ id "procedure-input"
                 , placeholder "Find Procedure"
                 , Attr.value model.queryString

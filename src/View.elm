@@ -1,6 +1,5 @@
 module View (..) where
 
-import Debug exposing (..)
 import Html exposing (..)
 import Html.Attributes as Attr exposing (..)
 import Header exposing (..)
@@ -33,40 +32,46 @@ tableflip a =
         a
 
 
--- procTRs : Model -> Section -> List Html
--- procTRs model section =
---     case section.procedures of
---         [] ->
---           []
-
---         procedures ->
---             (tr [] [ th [ align "left" ] [ text section.name ] ])
---                 :: (List.map
---                         (\proc ->
---                             tr
---                                 []
---                                 [ procTD model proc.url proc.name
---                                 ]
---                         )
---                         procedures
---                    )
+sectionHeader : Model -> Section -> List Html
+sectionHeader model section =
+    [ tr
+        []
+        [ th
+            [ align "left" ]
+            [ a
+                [ href <| model.rootUrl ++ section.url
+                , target "blank"
+                ]
+                [ text section.name ]
+            ]
+        ]
+    ]
 
 
-procTRs : Model -> Section -> List Html
-procTRs model section =
+sectionSeparator : List Html
+sectionSeparator =
+    [ div [ class "section-separator" ] [] ]
+
+
+tableRows : Model -> Section -> List Html
+tableRows model section =
     case section.procedures of
         [] ->
-          []
+            []
 
         procedures ->
-            (tr [] [ th [ align "left" ] [ text section.name ] ])
-                :: List.map .html procedures
+            List.concat
+                <| [ sectionHeader model section
+                   , List.map .html procedures
+                   , sectionSeparator
+                   ]
 
+
+getProcHtml : Section -> List Html
 getProcHtml section =
-  List.map .html (section.procedures)
-
+    List.map .html (section.procedures)
 
 
 listSpan : Model -> Html
 listSpan model =
-    tableflip <| List.take 500 <| List.concat <| List.map (procTRs model) model.sections
+    tableflip <| List.take 500 <| List.concat <| List.map (tableRows model) model.sections
